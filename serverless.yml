@@ -1,0 +1,56 @@
+service: paprika-recipe-api
+
+plugins:
+  - serverless-offline
+  - serverless-plugin-typescript
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: dev
+  region: us-east-1
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:PutObject"
+        - "s3:GetObject"
+        - "s3:DeleteObject"
+      Resource: "arn:aws:s3:::paprika-recipe-${self:provider.stage}/*"
+  environment:
+    RECIPE_BUCKET_NAME: paprika-recipe-${self:provider.stage}
+  binaryMediaTypes:
+    - '*/*'
+
+functions:
+  preparePaprikaRecipe:
+    handler: src/functions/recipeHandler.preparePaprikaRecipe
+    events:
+      - httpApi:
+          path: /prepare-paprikarecipe
+          method: post
+          cors: false
+
+resources:
+  Resources:
+    PaprikaRecipeBucket:
+      Type: "AWS::S3::Bucket"
+      Properties:
+        BucketName: paprika-recipe-${self:provider.stage}
+
+    PaprikaRecipeBucketPolicy:
+      Type: "AWS::S3::BucketPolicy"
+      Properties:
+        Bucket: 
+          Ref: PaprikaRecipeBucket
+        PolicyDocument:
+          Statement:
+            - Sid: PublicReadGetObject
+              Effect: "Allow"
+              Principal: "*"
+              Action: "s3:GetObject"
+              Resource: 
+                Fn::Join:
+                  - ''
+                  - - 'arn:aws:s3:::'
+                    - Ref: PaprikaRecipeBucket
+                    - "/*"
