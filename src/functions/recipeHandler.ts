@@ -6,8 +6,8 @@ import AWS from 'aws-sdk';
 // Initialize the S3 client
 const s3 = new AWS.S3();
 
-// Helper function to zip content
-async function zipContent(recipeName: string, data: Buffer): Promise<Buffer> {
+// Modified zipContent function to handle multiple recipes
+async function zipContent(recipes: { recipeName: string, data: Buffer }[]): Promise<Buffer> {
     const zip = archiver('zip', { zlib: { level: 9 } });
     const zipStream = new PassThrough();
     let chunks: Buffer[] = [];
@@ -16,7 +16,11 @@ async function zipContent(recipeName: string, data: Buffer): Promise<Buffer> {
     zipStream.on('end', () => {});
 
     zip.pipe(zipStream);
-    zip.append(data, { name: `${recipeName}.paprikarecipe` });
+
+    // Loop through each recipe and append to the zip
+    recipes.forEach(recipe => {
+        zip.append(recipe.data, { name: `${recipe.recipeName}.paprikarecipe` });
+    });
 
     return new Promise((resolve, reject) => {
         zip.on('error', reject);
@@ -46,14 +50,16 @@ export async function preparePaprikaRecipe(event: APIGatewayEvent): Promise<{ st
             body: JSON.stringify({ message: 'Missing request body' }),
         };
     }
-    const requestBody = JSON.parse(event.body);
-    const recipeName = requestBody.name;
-    const data = Buffer.from(JSON.stringify(requestBody));
+    const { recipes }  = JSON.parse(event.body);
+    const recipesData = recipes.map((recipe: any) => ({
+        recipeName: recipe.name,
+        data: Buffer.from(JSON.stringify(recipe))
+    }));
 
     try {
-        const zipBuffer = await zipContent(recipeName, data);
-        const s3Url = await uploadToS3(`${recipeName}.paprikarecipes`, zipBuffer);
-
+        const zipBuffer = await zipContent(recipesData);
+        const s3Url = await uploadToS3(`RecipeBundle-${Date.now()}.paprikarecipes`, zipBuffer);
+    
         return {
             statusCode: 200,
             body: JSON.stringify({ url: s3Url }),

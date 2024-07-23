@@ -1,0 +1,67 @@
+openapi: 3.0.0
+info:
+  title: Paprika Recipe API
+  description: API for preparing paprika recipes with custom notes and details.
+  version: 1.0.0
+servers:
+  - url: https://3ewagspiqd.execute-api.us-east-1.amazonaws.com
+    description: Production server
+paths:
+  /prepare-paprikarecipe:
+    post:
+      operationId: preparePaprikaRecipe
+      summary: Prepares a paprika recipe with custom input.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                recipes:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      notes:
+                        type: string
+                        example: If you don't have powdered Japanese mustard or English mustard, you can use dried Chinese or English hot mustard in its place at a 1:1 ratio.
+                      total_time:
+                        type: string
+                        example: 20 mins
+                      uid:
+                        type: string
+                      prep_time:
+                        type: string
+                        example: 20 mins to boil the eggs if starting from raw
+                      directions:
+                        type: string
+                      source:
+                        type: string
+                      name:
+                        type: string
+                        example: Katsuobushi Deviled Eggs
+                      cook_time:
+                        type: string
+                      servings:
+                        type: string
+                        example: 8 deviled egg halves
+                      ingredients:
+                        type: string
+                        example: 6 hard-boiled eggs, peeled\n2 teaspoons (10ml) rice vinegar or distilled white vinegar\n1 teaspoon (2g)
+                          powdered karashi (see Note)\n3 tablespoons (45g) mayonnaise\n1 teaspoon (3g) Hondashi\nKosher
+                          salt\n\nTo Finish:\nThinly sliced scallions\nShichimi togarashi\nShaved katsuobushi\nCoarse sea
+                          salt, such as Maldon or fleur de sel
+                      description:
+                        type: string
+      responses:
+        '200':
+          description: Successfully uploaded the recipe.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: URL of the uploaded recipe on S3.
